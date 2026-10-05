@@ -28,6 +28,7 @@ const impactMilestones = classroomRequests.map(({ request, school, funded, goal,
 function App() {
   const [showStudio, setShowStudio] = useState(true);
   const [reportNotice, setReportNotice] = useState('');
+  const [activeView, setActiveView] = useState('funding');
   const studioData = useMemo(() => ({
     sources: [
       { id: 'classroomRequests', data: classroomRequests },
@@ -36,6 +37,15 @@ function App() {
     ]
   }), []);
   const licenseKey = import.meta.env.VITE_AG_STUDIO_LICENSE_KEY;
+  const urgentFundingGap = classroomRequests
+    .filter(({ urgency }) => urgency === 'Urgent')
+    .reduce((total, { goal, funded }) => total + goal - funded, 0);
+  const actionCopy = {
+    funding: `Two urgent accessibility projects need ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(urgentFundingGap)} more to move forward.`,
+    evidence: 'Four projects have verified evidence; Accessible Reading Library is waiting for its book-list receipt.',
+    payments: 'Three PayPal Sandbox payments are captured. One donation is awaiting capture confirmation.',
+    studio: 'Studio is ready with classroom requests, payment records, and milestones as editable data sources.'
+  };
 
   const exportSummary = () => {
     const text = ['ClassFund AI impact report', 'Students reached: 1,284', 'Verified evidence: 89%', 'PayPal Sandbox donations: $8,460', 'Urgent accessibility requests: 2'].join('\n');
@@ -64,13 +74,24 @@ function App() {
       <Metric label="Students reached" value="1,284" note="Across 7 schools" />
     </section>
 
+    <section className="action-center" aria-label="Impact action center">
+      <div className="action-copy"><span className="eyebrow dark">Impact action center</span><h2>Start with a decision, then trace its outcome.</h2><p>{actionCopy[activeView]}</p></div>
+      <div className="action-tabs" role="tablist" aria-label="Impact views">
+        <button className={activeView === 'funding' ? 'selected' : ''} onClick={() => setActiveView('funding')} role="tab" aria-selected={activeView === 'funding'}>Funding gaps</button>
+        <button className={activeView === 'evidence' ? 'selected' : ''} onClick={() => setActiveView('evidence')} role="tab" aria-selected={activeView === 'evidence'}>Evidence trail</button>
+        <button className={activeView === 'payments' ? 'selected' : ''} onClick={() => { setActiveView('payments'); setShowStudio(false); }} role="tab" aria-selected={activeView === 'payments'}>Payments</button>
+        <button className={activeView === 'studio' ? 'selected' : ''} onClick={() => { setActiveView('studio'); setShowStudio(true); }} role="tab" aria-selected={activeView === 'studio'}>Build in Studio</button>
+      </div>
+      <div className="action-meta"><span>1,284 students reached</span><span>89% evidence verified</span><span>45-day Studio trial</span></div>
+    </section>
+
     <section className="studio-panel">
       <div className="studio-heading"><div><span className="eyebrow dark">AG Studio embedded analytics</span><h2>Impact Operations Dashboard</h2><p>Build, filter, group, edit, and export dashboards from live-shaped funding, payment, and impact sources.</p></div><div className="chips"><span>3 data sources</span><span>{licenseKey ? 'Trial key configured' : 'Trial key pending'}</span><span>AI module registered</span></div></div>
       {showStudio ? <div className="studio-canvas"><AgStudioProvider licenseKey={licenseKey} modules={[AgStudioAiModule]}><AgStudio data={studioData} mode="edit" /></AgStudioProvider></div> : <div className="payment-focus"><h3>Payment confirmation view</h3><p>Return to Studio to create your own payment-progress, evidence, accessibility, and funding-gap widgets.</p><ul>{paymentRecords.map((payment) => <li key={payment.paymentId}><b>{payment.paymentId}</b><span>{payment.campaign} · ${payment.amount} · {payment.confirmation}</span></li>)}</ul></div>}
       <div className="studio-footer">Tip: start by creating a table widget from <b>classroomRequests</b>, then add a grouped payment-progress chart and a funding-gap KPI.</div>
     </section>
 
-    <section className="bottom-grid"><article><span className="eyebrow dark">PayPal Sandbox</span><h2>Payment transparency</h2><p>Donation records expose confirmation state, campaign destination, and progress context for donors and teachers.</p><button className="primary" onClick={() => setShowStudio(true)}>Explore payment data</button></article><article><span className="eyebrow dark">Studio Agent Framework</span><h2>Ready for the impact agent</h2><p>The AG Studio AI module is registered. Connect your approved model harness next to ask questions such as “Which urgent accessibility requests need funding this week?”</p><a href="https://www.ag-grid.com/studio/react/ai-agents/" target="_blank" rel="noreferrer">Open agent setup guide</a></article></section>
+    <section className="bottom-grid"><article><span className="eyebrow dark">PayPal Sandbox</span><h2>Payment transparency</h2><p>Donation records expose confirmation state, campaign destination, and progress context for donors and teachers.</p><button className="primary" onClick={() => { setActiveView('payments'); setShowStudio(false); }}>Explore payment data</button></article><article><span className="eyebrow dark">Studio Agent Framework</span><h2>Ready for the impact agent</h2><p>The AG Studio AI module is registered. Connect your approved model harness next to ask questions such as “Which urgent accessibility requests need funding this week?”</p><a href="https://www.ag-grid.com/studio/react/ai-agents/" target="_blank" rel="noreferrer">Open agent setup guide</a></article></section>
     {reportNotice && <p className="notice" role="status">{reportNotice}</p>}
   </main>;
 }
